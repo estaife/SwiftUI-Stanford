@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import Combine
 
 final class EmojiArtDocument: ObservableObject {
     @Published private(set) var emojiArt: EmojiArtModel {
@@ -19,6 +20,8 @@ final class EmojiArtDocument: ObservableObject {
     
     @Published private(set) var backgroundImage: UIImage?
     @Published private(set) var backgroundImageFetchStatus: BckgroundImageFetchStatus = .idle
+    
+    private var backgroundImageFetchCancellable: AnyCancellable?
     
     private var autosaveTimer: Timer?
     
@@ -39,30 +42,34 @@ final class EmojiArtDocument: ObservableObject {
 
     var emojis: [EmojiArtModel.Emoji] { emojiArt.emojis }
     
+    // MARK: - Fetch Background Image
     private func fetchBackgroundImageDataIfNecessary() {
         backgroundImage = nil
         switch emojiArt.background {
         case .url(let url):
-            backgroundImageFetchStatus = .fetching
-            DispatchQueue.global(qos: .userInitiated).async {
-                let imageData = try? Data(contentsOf: url)
-                DispatchQueue.main.async { [weak self] in
-                    if self?.emojiArt.background == EmojiArtModel.Background.url(url) {
-                        self?.backgroundImageFetchStatus = .idle
-                        if let imageData {
-                            self?.backgroundImage = UIImage(data: imageData)
-                        }
-                        if self?.backgroundImage == nil {
-                            self?.backgroundImageFetchStatus = .failed(url)
-                        }
-                    }
-                }
-            }
+            downloadBackgroundImage(with: url)
         case .imageData(let data):
             backgroundImage = UIImage(data: data)
         case .blank:
             break
         }
+    }
+    
+    private func downloadBackgroundImage(with url: URL) {
+        let session = URLSession.shared
+        let publisher = session.dataTaskPublisher(for: url)
+            .map { (data, _) in UIImage(data: data) }
+            .replaceError(with: nil)
+            .receive(on: DispatchQueue.main)
+        
+        backgroundImageFetchStatus = .fetching
+        backgroundImageFetchCancellable?.cancel()
+        
+        backgroundImageFetchCancellable = publisher
+            .sink { [weak self] image in
+                self?.backgroundImage = image
+                self?.backgroundImageFetchStatus = (image != nil) ? .idle : .failed(url)
+            }
     }
     
     // MARK: - Save Game
