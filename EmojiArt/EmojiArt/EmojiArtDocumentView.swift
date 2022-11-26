@@ -36,12 +36,11 @@ struct EmojiArtDocumentView: View {
     var documentBody: some View {
         GeometryReader { geometry in
             ZStack {
-                Color.white.overlay {
-                    OptionalImage(uiImage: document.backgroundImage)
-                        .scaleEffect(zoomScale)
-                        .position(convertFromEmojiCoordinates((0, 0), in: geometry))
-                }
-                .gesture(doubleTapToZoom(in: geometry.size))
+                Color.white
+                OptionalImage(uiImage: document.backgroundImage)
+                    .scaleEffect(zoomScale)
+                    .position(convertFromEmojiCoordinates((0, 0), in: geometry))
+                    .gesture(doubleTapToZoom(in: geometry.size))
                 if document.backgroundImageFetchStatus == .fetching {
                     ProgressView().scaleEffect(2.0)
                 } else {
@@ -72,12 +71,60 @@ struct EmojiArtDocumentView: View {
                     zoomToFit(image, in: geometry.size)
                 }
             }
-            .toolbar {
-                UndoButton(
-                    undo: undoManager?.optionalUndoMenuItemTitle,
-                    redo: undoManager?.optionalRedoMenuItemTitle
-                )
+            .compactToolbar {
+                AnimatedActionButton(title: "Paste Background", systemImage: "doc.on.clipboard") {
+                    pasteBackground()
+                }
+                if PhotoLibrary.isAvailable {
+                    AnimatedActionButton(title: "Search", systemImage: "photo") {
+                        backgroundPicker = .library
+                    }
+                }
+                if Camera.isAvailable {
+                    AnimatedActionButton(title: "Camera", systemImage: "camera") {
+                        backgroundPicker = .camera
+                    }
+                }
+                if let undoManager {
+                    if undoManager.canUndo {
+                        AnimatedActionButton(title: undoManager.undoActionName, systemImage: "arrow.uturn.backward") {
+                            undoManager.undo()
+                        }
+                    }
+                    if undoManager.canRedo {
+                        AnimatedActionButton(title: undoManager.redoActionName, systemImage: "arrow.uturn.forward") {
+                            undoManager.redo()
+                        }
+                    }
+                }
             }
+            .sheet(item: $backgroundPicker) { pickerType in
+                switch pickerType {
+                case .camera:
+                    Camera { image in
+                        handlePickedBackgroundImage(image)
+                    }
+                case .library:
+                    PhotoLibrary { image in
+                        handlePickedBackgroundImage(image)
+                    }
+                }
+            }
+        }
+    }
+    
+    // MARK: - Paste Background
+    private func pasteBackground() {
+        autozoom = true
+        if let imageData = UIPasteboard.general.image?.jpegData(compressionQuality: 1.0) {
+            document.setBackground(.imageData(imageData), undoManager: undoManager)
+        } else if let url = UIPasteboard.general.url?.imageURL {
+            document.setBackground(.url(url), undoManager: undoManager)
+        } else {
+            alertToShow = IdentifiableAlert(
+                title: "Paste Background",
+                message: "There is no image currently on the pasteboard"
+            )
         }
     }
     
@@ -208,6 +255,25 @@ struct EmojiArtDocumentView: View {
             .onEnded { finalDragGestureValue in
                 steadyStatePanOffset = steadyStatePanOffset + (finalDragGestureValue.translation / zoomScale)
             }
+    }
+    
+    // MARK: - Background Picker Image
+    @State
+    private var backgroundPicker: BackgroundPickerType?
+    
+    enum BackgroundPickerType: String, Identifiable {
+        case camera
+        case library
+        
+        var id: String { rawValue }
+    }
+    
+    private func handlePickedBackgroundImage(_ image: UIImage?) {
+        autozoom = true
+        if let imageData = image?.jpegData(compressionQuality: 1.0) {
+            document.setBackground(.imageData(imageData), undoManager: undoManager)
+        }
+        backgroundPicker = nil
     }
     
     // MARK: - Alert

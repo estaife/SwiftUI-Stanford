@@ -37,16 +37,8 @@ struct PaletteManager: View {
             }
             .navigationTitle("Manage Palettes")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem { EditButton() }
-                ToolbarItem(placement: .navigationBarLeading) {
-                    if presentationMode.wrappedValue.isPresented {
-                        Button("Close") {
-                            presentationMode.wrappedValue.dismiss()
-                        }
-                    }
-                }
-            }
+            .dismissable { presentationMode.wrappedValue.dismiss() }
+            .toolbar { ToolbarItem { EditButton() } }
             .environment(\.editMode, $editMode)
         }
     }
