@@ -8,8 +8,10 @@
 import SwiftUI
 
 struct PaletteEditor: View {
-    @Binding var palette: Palette
-    @State private var emojisToAdd = ""
+    @Binding
+    var palette: Palette
+    @State
+    private var emojisToAdd = ""
     
     var body: some View {
         Form {

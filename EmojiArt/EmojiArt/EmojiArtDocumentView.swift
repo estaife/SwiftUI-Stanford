@@ -10,15 +10,26 @@ import SwiftUI
 struct EmojiArtDocumentView: View {
     
     // MARK: - Properties
-    @ObservedObject var document: EmojiArtDocument
+    @ObservedObject
+    var document: EmojiArtDocument
     
-    private let defaultEmojiFontSize: CGFloat = 40
+    @Environment(\.undoManager)
+    var undoManager
+    
+    @ScaledMetric
+    private var defaultEmojiFontSize: CGFloat = 40
+    
+    @State
+    private var autozoom = false
     
     // MARK: - Views
     var body: some View {
-        VStack(spacing: 0) {
-            documentBody
-            PaletteChooser(emojiFontSize: defaultEmojiFontSize)
+        NavigationView {
+            VStack(spacing: 0) {
+                documentBody
+                PaletteChooser(emojiFontSize: defaultEmojiFontSize)
+            }
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 
@@ -57,7 +68,15 @@ struct EmojiArtDocumentView: View {
                 }
             }
             .onReceive(document.$backgroundImage) { image in
-                zoomToFit(image, in: geometry.size)
+                if autozoom {
+                    zoomToFit(image, in: geometry.size)
+                }
+            }
+            .toolbar {
+                UndoButton(
+                    undo: undoManager?.optionalUndoMenuItemTitle,
+                    redo: undoManager?.optionalRedoMenuItemTitle
+                )
             }
         }
     }
@@ -65,14 +84,16 @@ struct EmojiArtDocumentView: View {
     // MARK: - Drop Methods
     private func dropURL(with providers: [NSItemProvider]) -> Bool {
         providers.loadObjects(ofType: URL.self) { url in
-            document.setBackground(.url(url.imageURL))
+            autozoom = true
+            document.setBackground(.url(url.imageURL), undoManager: undoManager)
         }
     }
     
     private func dropImage(with providers: [NSItemProvider]) -> Bool {
         providers.loadObjects(ofType: UIImage.self) { image in
+            autozoom = true
             if let data = image.jpegData(compressionQuality: 1.0) {
-                document.setBackground(.imageData(data))
+                document.setBackground(.imageData(data), undoManager: undoManager)
             }
         }
     }
@@ -83,7 +104,8 @@ struct EmojiArtDocumentView: View {
                 document.addEmoji(
                     String(emoji),
                     at: convertToEmojiCoordinates(location, in: geometry),
-                    size: defaultEmojiFontSize / zoomScale
+                    size: defaultEmojiFontSize / zoomScale,
+                    undoManager: undoManager
                 )
             }
         }
@@ -140,7 +162,9 @@ struct EmojiArtDocumentView: View {
     }
 
     // MARK: - Zoom
-    @State private var steadyStateZoomScale: CGFloat = 1
+    @SceneStorage("PaletteChooser.steadyStateZoomScale")
+    private var steadyStateZoomScale: CGFloat = 1
+    
     @GestureState private var gestureZoomScale: CGFloat = 1
     
     private var zoomScale: CGFloat {
@@ -167,7 +191,9 @@ struct EmojiArtDocumentView: View {
     }
     
     // MARK: - Panning
-    @State private var steadyStatePanOffset: CGSize = .zero
+    @SceneStorage("PaletteChooser.steadyStatePanOffset")
+    private var steadyStatePanOffset: CGSize = .zero
+    
     @GestureState private var gesturePanOffset: CGSize = .zero
     
     private var panOffset: CGSize {

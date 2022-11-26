@@ -8,9 +8,14 @@
 import SwiftUI
 
 struct PaletteManager: View {
-    @EnvironmentObject var store: PaletteStore
-    @Environment(\.presentationMode) var presentationMode
-    @State private var editMode: EditMode = .inactive
+    @EnvironmentObject
+    var store: PaletteStore
+    
+    @Environment(\.presentationMode)
+    var presentationMode
+    
+    @State
+    private var editMode: EditMode = .inactive
     
     var body: some View {
         NavigationView {

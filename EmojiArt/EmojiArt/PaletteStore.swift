@@ -20,7 +20,8 @@ struct Palette: Codable, Identifiable, Hashable {
 }
 
 final class PaletteStore: ObservableObject {
-    @Published var palettes = [Palette]() {
+    @Published
+    var palettes = [Palette]() {
         didSet {
             storeInUserDefaults()
         }

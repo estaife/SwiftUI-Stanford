@@ -135,24 +135,26 @@ extension DragGesture.Value {
 }
 
 extension CGRect {
-    var center: CGPoint {
-        CGPoint(x: midX, y: midY)
-    }
+    var center: CGPoint { CGPoint(x: midX, y: midY) }
 }
 
 extension CGPoint {
     static func -(lhs: Self, rhs: Self) -> CGSize {
         CGSize(width: lhs.x - rhs.x, height: lhs.y - rhs.y)
     }
+    
     static func +(lhs: Self, rhs: CGSize) -> CGPoint {
         CGPoint(x: lhs.x + rhs.width, y: lhs.y + rhs.height)
     }
+    
     static func -(lhs: Self, rhs: CGSize) -> CGPoint {
         CGPoint(x: lhs.x - rhs.width, y: lhs.y - rhs.height)
     }
+    
     static func *(lhs: Self, rhs: CGFloat) -> CGPoint {
         CGPoint(x: lhs.x * rhs, y: lhs.y * rhs)
     }
+    
     static func /(lhs: Self, rhs: CGFloat) -> CGPoint {
         CGPoint(x: lhs.x / rhs, y: lhs.y / rhs)
     }
@@ -163,15 +165,19 @@ extension CGSize {
     var center: CGPoint {
         CGPoint(x: width/2, y: height/2)
     }
+    
     static func +(lhs: Self, rhs: Self) -> CGSize {
         CGSize(width: lhs.width + rhs.width, height: lhs.height + rhs.height)
     }
+    
     static func -(lhs: Self, rhs: Self) -> CGSize {
         CGSize(width: lhs.width - rhs.width, height: lhs.height - rhs.height)
     }
+    
     static func *(lhs: Self, rhs: CGFloat) -> CGSize {
         CGSize(width: lhs.width * rhs, height: lhs.height * rhs)
     }
+    
     static func /(lhs: Self, rhs: CGFloat) -> CGSize {
         CGSize(width: lhs.width/rhs, height: lhs.height/rhs)
     }
@@ -192,6 +198,7 @@ extension RawRepresentable where Self: Codable {
             return ""
         }
     }
+    
     public init?(rawValue: String) {
         if let value = try? JSONDecoder().decode(Self.self, from: Data(rawValue.utf8)) {
             self = value
@@ -229,6 +236,7 @@ extension Array where Element == NSItemProvider {
         }
         return false
     }
+    
     func loadObjects<T>(ofType theType: T.Type, firstOnly: Bool = false, using load: @escaping (T) -> Void) -> Bool where T: _ObjectiveCBridgeable, T._ObjectiveCType: NSItemProviderReading {
         if let provider = first(where: { $0.canLoadObject(ofClass: theType) }) {
             let _ = provider.loadObject(ofClass: theType) { object, error in
@@ -242,9 +250,11 @@ extension Array where Element == NSItemProvider {
         }
         return false
     }
+    
     func loadFirstObject<T>(ofType theType: T.Type, using load: @escaping (T) -> Void) -> Bool where T: NSItemProviderReading {
         loadObjects(ofType: theType, firstOnly: true, using: load)
     }
+    
     func loadFirstObject<T>(ofType theType: T.Type, using load: @escaping (T) -> Void) -> Bool where T: _ObjectiveCBridgeable, T._ObjectiveCType: NSItemProviderReading {
         loadObjects(ofType: theType, firstOnly: true, using: load)
     }

@@ -11,10 +11,16 @@ struct PaletteChooser: View {
     var emojiFontSize: CGFloat = 40
     var emojiFont: Font { .system(size: emojiFontSize) }
     
-    @EnvironmentObject var store: PaletteStore
-    @State private var chosenPaletteIndex = 0
-    @State private var paletteToEdit: Palette?
-    @State private var managing = false
+    @EnvironmentObject
+    var store: PaletteStore
+    
+    @SceneStorage("PaletteChooser.chosenPaletteIndex")
+    private var chosenPaletteIndex = 0
+    
+    @State
+    private var paletteToEdit: Palette?
+    @State
+    private var managing = false
     
     var body: some View {
         let palette = store.palette(at: chosenPaletteIndex)
@@ -90,5 +96,11 @@ struct PaletteChooser: View {
             insertion: .offset(x: 0, y: emojiFontSize),
             removal:  .offset(x: 0, y: -emojiFontSize)
         )
+    }
+}
+
+struct PaletteChooser_Previews: PreviewProvider {
+    static var previews: some View {
+        PaletteChooser()
     }
 }
